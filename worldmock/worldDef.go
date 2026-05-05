@@ -55,6 +55,7 @@ type MockWorld struct {
 	ProvidedBlockchainHook     vmcommon.BlockchainHook
 	EnableEpochsHandler        vmcommon.EnableEpochsHandler
 	OtherVMOutputMap           map[string]*vmcommon.VMOutput
+	DRWASyncPayloads           [][]byte
 }
 
 // NewMockWorld creates a new MockWorld instance
@@ -72,6 +73,7 @@ func NewMockWorld() *MockWorld {
 		BuiltinFuncs:        nil,
 		EnableEpochsHandler: EnableEpochsHandlerStubAllFlags(),
 		OtherVMOutputMap:    make(map[string]*vmcommon.VMOutput),
+		DRWASyncPayloads:    nil,
 	}
 	world.AccountsAdapter = NewMockAccountsAdapter(world)
 	world.GuardedAccountHandler = NewMockGuardedAccountHandler()

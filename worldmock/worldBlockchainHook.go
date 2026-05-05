@@ -158,7 +158,10 @@ func (b *MockWorld) ApplyDRWASyncEnvelopeBytes(payload []byte, callerAddress []b
 		return b.ProvidedBlockchainHook.ApplyDRWASyncEnvelopeBytes(payload, callerAddress)
 	}
 
-	return ErrProvidedBlockchainHookNotInitialized
+	payloadCopy := make([]byte, len(payload))
+	copy(payloadCopy, payload)
+	b.DRWASyncPayloads = append(b.DRWASyncPayloads, payloadCopy)
+	return nil
 }
 
 // QueryDRWANativeGovernance returns encoded native DRWA governance state.

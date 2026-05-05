@@ -35,9 +35,11 @@ func TestGetBuiltinFunctionNamesReturnsNilWhenWrapperNotInitialized(t *testing.T
 	require.Nil(t, world.GetBuiltinFunctionNames())
 }
 
-func TestApplyDRWASyncEnvelopeBytesRequiresProvidedHook(t *testing.T) {
+func TestApplyDRWASyncEnvelopeBytesCaptures(t *testing.T) {
 	world := NewMockWorld()
 
 	err := world.ApplyDRWASyncEnvelopeBytes([]byte("payload"), []byte("caller"))
-	require.ErrorIs(t, err, ErrProvidedBlockchainHookNotInitialized)
+	require.NoError(t, err)
+	require.Len(t, world.DRWASyncPayloads, 1)
+	require.Equal(t, []byte("payload"), world.DRWASyncPayloads[0])
 }
