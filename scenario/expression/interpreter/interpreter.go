@@ -22,6 +22,7 @@ const bech32Prefix = "bech32:"
 const filePrefix = "file:"
 const mxscPrefix = "mxsc:"
 const keccak256Prefix = "keccak256:"
+const maxExpressionDepth = 64
 
 const u64Prefix = "u64:"
 const u32Prefix = "u32:"
@@ -97,6 +98,14 @@ func (ei *ExprInterpreter) InterpretSubTree(obj oj.OJsonObject) ([]byte, error) 
 // - "keccak256:..."
 // - concatenation using |
 func (ei *ExprInterpreter) InterpretString(strRaw string) ([]byte, error) {
+	return ei.interpretStringWithDepth(strRaw, 0)
+}
+
+func (ei *ExprInterpreter) interpretStringWithDepth(strRaw string, depth int) ([]byte, error) {
+	if depth > maxExpressionDepth {
+		return nil, fmt.Errorf("expression nesting depth exceeded limit (%d)", maxExpressionDepth)
+	}
+
 	if len(strRaw) == 0 {
 		return []byte{}, nil
 	}
@@ -131,7 +140,7 @@ func (ei *ExprInterpreter) InterpretString(strRaw string) ([]byte, error) {
 	// keccak256
 	// TODO: make this part of a proper parser
 	if strings.HasPrefix(strRaw, keccak256Prefix) {
-		arg, err := ei.InterpretString(strRaw[len(keccak256Prefix):])
+		arg, err := ei.interpretStringWithDepth(strRaw[len(keccak256Prefix):], depth+1)
 		if err != nil {
 			return []byte{}, fmt.Errorf("cannot parse keccak256 argument: %w", err)
 		}
@@ -148,7 +157,7 @@ func (ei *ExprInterpreter) InterpretString(strRaw string) ([]byte, error) {
 	if len(parts) > 1 {
 		concat := make([]byte, 0)
 		for _, part := range parts {
-			eval, err := ei.InterpretString(part)
+			eval, err := ei.interpretStringWithDepth(part, depth+1)
 			if err != nil {
 				return []byte{}, err
 			}
@@ -192,7 +201,7 @@ func (ei *ExprInterpreter) InterpretString(strRaw string) ([]byte, error) {
 	}
 
 	// fixed width numbers
-	parsed, result, err := ei.tryInterpretFixedWidth(strRaw)
+		parsed, result, err := ei.tryInterpretFixedWidth(strRaw, depth)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +339,7 @@ func (ei *ExprInterpreter) interpretUnsignedNumberFixedWidth(strRaw string, targ
 	return twos.CopyAlignRight(numberBytes, targetWidth), nil
 }
 
-func (ei *ExprInterpreter) tryInterpretFixedWidth(strRaw string) (bool, []byte, error) {
+func (ei *ExprInterpreter) tryInterpretFixedWidth(strRaw string, depth int) (bool, []byte, error) {
 	if strings.HasPrefix(strRaw, u64Prefix) {
 		r, err := ei.interpretUnsignedNumberFixedWidth(strRaw[len(u64Prefix):], 8)
 		return true, r, err
@@ -374,7 +383,7 @@ func (ei *ExprInterpreter) tryInterpretFixedWidth(strRaw string) (bool, []byte, 
 	}
 
 	if strings.HasPrefix(strRaw, nestedPrefix) {
-		return ei.interpretNestedBytes(strRaw)
+		return ei.interpretNestedBytes(strRaw, depth)
 	}
 
 	return false, []byte{}, nil
@@ -394,23 +403,31 @@ func (ei *ExprInterpreter) interpretExplicitBigUintNumber(strRaw string) (bool, 
 	return true, append(encodedLength, biBytes...), err
 }
 
-func (ei *ExprInterpreter) interpretNestedBytes(strRaw string) (bool, []byte, error) {
-	nestedBytes, err := ei.InterpretString(strRaw[len(nestedPrefix):])
+func (ei *ExprInterpreter) interpretNestedBytes(strRaw string, depth int) (bool, []byte, error) {
+	nestedBytes, err := ei.interpretStringWithDepth(strRaw[len(nestedPrefix):], depth+1)
 	lengthBytes := big.NewInt(int64(len(nestedBytes))).Bytes()
 	encodedLength := twos.CopyAlignRight(lengthBytes, 4)
 	return true, append(encodedLength, nestedBytes...), err
 }
 
 func (ei *ExprInterpreter) interpretMxscJson(fileContents []byte) ([]byte, error) {
-	mxsc := make(map[string]interface{})
-	err1 := json.Unmarshal([]byte(fileContents), &mxsc)
-	if err1 != nil {
-		return []byte{}, err1
+	var mxsc struct {
+		Code string `json:"code"`
 	}
 
-	mxscCode, err := hex.DecodeString(mxsc["code"].(string))
+	err := json.Unmarshal(fileContents, &mxsc)
 	if err != nil {
-		return []byte{}, err1
+		return []byte{}, err
 	}
+
+	if len(mxsc.Code) == 0 {
+		return []byte{}, fmt.Errorf("mxsc json missing non-empty code field")
+	}
+
+	mxscCode, err := hex.DecodeString(mxsc.Code)
+	if err != nil {
+		return []byte{}, err
+	}
+
 	return mxscCode, nil
 }

@@ -133,11 +133,9 @@ func TestAddress(t *testing.T) {
 	require.Equal(t, []byte("1234567890123456789012345678901\x01"), result)
 	require.Equal(t, "address:1234567890123456789012345678901#01", er.Reconstruct(result, mer.AddressHint))
 
-	// trims excess
 	result, err = ei.InterpretString("address:1234567890123456789012345678901\x013")
-	require.Nil(t, err)
-	require.Equal(t, []byte("1234567890123456789012345678901\x01"), result)
-	require.Equal(t, "address:1234567890123456789012345678901#01", er.Reconstruct(result, mer.AddressHint))
+	require.EqualError(t, err, "address prefix too long: got 33 bytes, max 32")
+	require.Nil(t, result)
 }
 
 func TestAddressWithShardId(t *testing.T) {
@@ -164,11 +162,9 @@ func TestAddressWithShardId(t *testing.T) {
 	require.Equal(t, []byte("1234567890123456789012345678901\x66"), result)
 	require.Equal(t, "address:1234567890123456789012345678901#66", er.Reconstruct(result, mer.AddressHint))
 
-	// trims excess
 	result, err = ei.InterpretString("address:12345678901234567890123456789012#66")
-	require.Nil(t, err)
-	require.Equal(t, []byte("1234567890123456789012345678901\x66"), result)
-	require.Equal(t, "address:1234567890123456789012345678901#66", er.Reconstruct(result, mer.AddressHint))
+	require.EqualError(t, err, "address prefix too long: got 32 bytes, max 31")
+	require.Nil(t, result)
 }
 
 func TestBech32(t *testing.T) {
@@ -209,11 +205,9 @@ func TestSCAddress(t *testing.T) {
 	require.Equal(t, []byte("\x00\x00\x00\x00\x00\x00\x00\x00VM123456789012345678912s"), result)
 	require.Equal(t, "sc:123456789012345678912#73", er.Reconstruct(result, mer.AddressHint))
 
-	// trims excess
 	result, err = ei.InterpretString("sc:123456789012345678912sx")
-	require.Nil(t, err)
-	require.Equal(t, []byte("\x00\x00\x00\x00\x00\x00\x00\x00VM123456789012345678912s"), result)
-	require.Equal(t, "sc:123456789012345678912#73", er.Reconstruct(result, mer.AddressHint))
+	require.EqualError(t, err, "address prefix too long: got 23 bytes, max 22")
+	require.Nil(t, result)
 }
 
 func TestSCAddressWithShardId(t *testing.T) {
@@ -230,11 +224,9 @@ func TestSCAddressWithShardId(t *testing.T) {
 	require.Equal(t, []byte("\x00\x00\x00\x00\x00\x00\x00\x00VM123456789012345678912\x88"), result)
 	require.Equal(t, "sc:123456789012345678912#88", er.Reconstruct(result, mer.AddressHint))
 
-	// trims excess
 	result, err = ei.InterpretString("sc:123456789012345678912x#88")
-	require.Nil(t, err)
-	require.Equal(t, []byte("\x00\x00\x00\x00\x00\x00\x00\x00VM123456789012345678912\x88"), result)
-	require.Equal(t, "sc:123456789012345678912#88", er.Reconstruct(result, mer.AddressHint))
+	require.EqualError(t, err, "address prefix too long: got 22 bytes, max 21")
+	require.Nil(t, result)
 }
 
 func TestUnsignedNumber(t *testing.T) {

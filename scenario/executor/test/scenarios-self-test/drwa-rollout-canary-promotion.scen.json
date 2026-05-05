@@ -1,0 +1,81 @@
+{
+    "comment": "DRWA canary-to-limited rollout promotion drill in MultiversX scenario format",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"version\":3}",
+                        "str:drwa:token:CARBON-123:rollout:evidence": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"canary\",\"checks\":[\"token policy present\",\"holder mirror present:holderA\"],\"missing_holders\":[],\"warnings\":[],\"ready\":true,\"requires_canary_only\":false,\"activation_steps\":[\"confirm governance approval\",\"activate issuer-scoped canary asset\",\"observe denial and sync metrics\",\"persist rollout evidence\"]}"
+                    }
+                },
+                "address:holderA": {
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:holderA": "str:{\"kyc_status\":\"approved\",\"version\":1}"
+                    }
+                }
+            }
+        },
+        {
+            "step": "checkState",
+            "id": "check-canary-evidence",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"version\":3}",
+                        "str:drwa:token:CARBON-123:rollout:evidence": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"canary\",\"checks\":[\"token policy present\",\"holder mirror present:holderA\"],\"missing_holders\":[],\"warnings\":[],\"ready\":true,\"requires_canary_only\":false,\"activation_steps\":[\"confirm governance approval\",\"activate issuer-scoped canary asset\",\"observe denial and sync metrics\",\"persist rollout evidence\"]}"
+                    }
+                },
+                "address:holderA": {
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:holderA": "str:{\"kyc_status\":\"approved\",\"version\":1}"
+                    }
+                }
+            }
+        },
+        {
+            "step": "setState",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"version\":3}",
+                        "str:drwa:token:CARBON-123:rollout:evidence": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"limited\",\"checks\":[\"token policy present\",\"holder mirror present:holderA\",\"holder mirror present:holderB\"],\"missing_holders\":[],\"warnings\":[],\"ready\":true,\"requires_canary_only\":false,\"activation_steps\":[\"confirm canary success evidence\",\"activate limited issuer cohort\",\"monitor proxy/api/sdk consistency\",\"record post-rollout verification\"]}"
+                    }
+                },
+                "address:holderA": {
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:holderA": "str:{\"kyc_status\":\"approved\",\"version\":1}"
+                    }
+                },
+                "address:holderB": {
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:holderB": "str:{\"kyc_status\":\"approved\",\"version\":1}"
+                    }
+                }
+            }
+        },
+        {
+            "step": "checkState",
+            "id": "check-limited-evidence",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"version\":3}",
+                        "str:drwa:token:CARBON-123:rollout:evidence": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"limited\",\"checks\":[\"token policy present\",\"holder mirror present:holderA\",\"holder mirror present:holderB\"],\"missing_holders\":[],\"warnings\":[],\"ready\":true,\"requires_canary_only\":false,\"activation_steps\":[\"confirm canary success evidence\",\"activate limited issuer cohort\",\"monitor proxy/api/sdk consistency\",\"record post-rollout verification\"]}"
+                    }
+                },
+                "address:holderA": {
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:holderA": "str:{\"kyc_status\":\"approved\",\"version\":1}"
+                    }
+                },
+                "address:holderB": {
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:holderB": "str:{\"kyc_status\":\"approved\",\"version\":1}"
+                    }
+                }
+            }
+        }
+    ]
+}

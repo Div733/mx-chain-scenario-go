@@ -112,22 +112,33 @@ func (am AccountMap) Clone() AccountMap {
 	return clone
 }
 
-// LoadAccountStorageFrom reassigns the storage of the accounts to the storage
-// of the accounts found in otherAM; it only does a reference change, not a deep copy.
+// LoadAccountStorageFrom restores the live map to the exact snapshot state.
 func (am AccountMap) LoadAccountStorageFrom(otherAM AccountMap) error {
-	for address, account := range am {
-		otherAccount, otherExists := otherAM[address]
-		if !otherExists {
-			if bytes.Equal([]byte(address), vmcommon.SystemAccountAddress) {
-				continue
-			}
+	for address := range am {
+		if bytes.Equal([]byte(address), vmcommon.SystemAccountAddress) {
+			continue
+		}
+		if _, otherExists := otherAM[address]; !otherExists {
+			delete(am, address)
+		}
+	}
 
+	for address, otherAccount := range otherAM {
+		liveAccount, exists := am[address]
+		if !exists {
+			am[address] = otherAccount.Clone()
+			continue
+		}
+
+		liveAccount.RestoreFrom(otherAccount)
+	}
+
+	for address := range am {
+		if _, otherExists := otherAM[address]; !otherExists && !bytes.Equal([]byte(address), vmcommon.SystemAccountAddress) {
 			return fmt.Errorf(
 				"account %s could not be loaded from AccountMap",
 				hex.EncodeToString([]byte(address)))
 		}
-		account.Storage = otherAccount.Storage
-		account.Balance = big.NewInt(0).Set(otherAccount.Balance)
 	}
 
 	return nil

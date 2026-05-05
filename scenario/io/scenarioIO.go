@@ -1,6 +1,7 @@
 package scenio
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +12,8 @@ import (
 )
 
 var defaultVMType = []byte{0, 0}
+
+const maxScenarioFileSizeBytes int64 = 20 * 1024 * 1024
 
 // ParseScenariosScenario reads and parses a Scenarios scenario from a JSON file.
 func ParseScenariosScenario(parser scenjparse.Parser, scenFilePath string) (*scenmodel.Scenario, error) {
@@ -33,9 +36,12 @@ func ParseScenariosScenario(parser scenjparse.Parser, scenFilePath string) (*sce
 		_ = jsonFile.Close()
 	}()
 
-	byteValue, err := io.ReadAll(jsonFile)
+	byteValue, err := io.ReadAll(io.LimitReader(jsonFile, maxScenarioFileSizeBytes+1))
 	if err != nil {
 		return nil, err
+	}
+	if int64(len(byteValue)) > maxScenarioFileSizeBytes {
+		return nil, fmt.Errorf("scenario file %s exceeds maximum size of %d bytes", scenFilePath, maxScenarioFileSizeBytes)
 	}
 
 	parser.ExprInterpreter.FileResolver.SetContext(scenFilePath)
@@ -53,10 +59,10 @@ func ParseScenariosScenarioDefaultParser(scenFilePath string) (*scenmodel.Scenar
 func WriteScenariosScenario(scenario *scenmodel.Scenario, toPath string) error {
 	jsonString := scenjwrite.ScenarioToJSONString(scenario)
 
-	err := os.MkdirAll(filepath.Dir(toPath), os.ModePerm)
+	err := os.MkdirAll(filepath.Dir(toPath), 0750)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(toPath, []byte(jsonString), 0644)
+	return os.WriteFile(toPath, []byte(jsonString), 0600)
 }

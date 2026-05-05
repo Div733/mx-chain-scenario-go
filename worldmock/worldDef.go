@@ -129,7 +129,12 @@ func (b *MockWorld) NumberOfShards() uint32 {
 
 // ComputeId -
 func (b *MockWorld) ComputeId(address []byte) uint32 {
-	return b.AcctMap.GetAccount(address).ShardID
+	account := b.AcctMap.GetAccount(address)
+	if account == nil {
+		return 0
+	}
+
+	return account.ShardID
 }
 
 // SelfId -
@@ -141,7 +146,17 @@ func (b *MockWorld) SelfId() uint32 {
 func (b *MockWorld) SameShard(firstAddress []byte, secondAddress []byte) bool {
 	firstAccount := b.AcctMap.GetAccount(firstAddress)
 	secondAccount := b.AcctMap.GetAccount(secondAddress)
-	return firstAccount.ShardID == secondAccount.ShardID
+	firstShardID := uint32(0)
+	if firstAccount != nil {
+		firstShardID = firstAccount.ShardID
+	}
+
+	secondShardID := uint32(0)
+	if secondAccount != nil {
+		secondShardID = secondAccount.ShardID
+	}
+
+	return firstShardID == secondShardID
 }
 
 // CommunicationIdentifier -
