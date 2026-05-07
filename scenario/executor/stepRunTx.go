@@ -26,9 +26,6 @@ func (ae *ScenarioExecutor) ExecuteTxStep(step *scenmodel.TxStep) (*vmcommon.VMO
 	}
 
 	output, err := ae.executeTx(step.TxIdent, step.Tx)
-	if err != nil {
-		return nil, err
-	}
 
 	if step.DisplayLogs {
 		DisableLoggingForTests()
@@ -36,10 +33,16 @@ func (ae *ScenarioExecutor) ExecuteTxStep(step *scenmodel.TxStep) (*vmcommon.VMO
 
 	// check results
 	if step.ExpectedResult != nil {
-		err = ae.checkTxResults(step.TxIdent, step.ExpectedResult, ae.checkGas, output)
+		// An expected non-Ok result is valid; suppress the executeTx error and
+		// let checkTxResults validate ReturnCode and ReturnMessage instead.
+		if output != nil {
+			err = ae.checkTxResults(step.TxIdent, step.ExpectedResult, ae.checkGas, output)
+		}
 		if err != nil {
 			return nil, err
 		}
+	} else if err != nil {
+		return nil, err
 	}
 
 	return output, nil
