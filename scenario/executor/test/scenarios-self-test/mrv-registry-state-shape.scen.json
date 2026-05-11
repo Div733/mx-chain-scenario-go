@@ -1,0 +1,36 @@
+{
+    "comment": "MRV registry state shape proof in MultiversX scenario format",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:governance": "address:governance",
+                        "str:storageVersion": "1"
+                    }
+                },
+                "address:governance": {
+                    "nonce": "0",
+                    "balance": "1,000,000"
+                }
+            }
+        },
+        {
+            "step": "checkState",
+            "id": "check-mrv-registry-shape",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:governance": "address:governance",
+                        "str:storageVersion": "1"
+                    }
+                },
+                "address:governance": {
+                    "nonce": "0",
+                    "balance": "1,000,000"
+                }
+            }
+        }
+    ]
+}

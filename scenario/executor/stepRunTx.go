@@ -49,15 +49,15 @@ func (ae *ScenarioExecutor) executeTx(txIndex string, tx *scenmodel.Transaction)
 	var err error
 	gasForExecution := uint64(0)
 
-	// use gas (before snaphot)
+	// Charge gas / bump nonce outside the rollback boundary: the protocol
+	// applies these unconditionally, so they must survive a failed VM call.
 	if tx.Type.HasSender() {
 		beforeErr := ae.World.UpdateWorldStateBefore(
 			tx.From.Value,
 			tx.GasLimit.Value,
 			tx.GasPrice.Value)
 		if beforeErr != nil {
-			err = fmt.Errorf("could not set up tx %s: %w", txIndex, beforeErr)
-			return nil, err
+			return nil, fmt.Errorf("could not set up tx %s: %w", txIndex, beforeErr)
 		}
 
 		gasForExecution = tx.GasLimit.Value
@@ -66,22 +66,25 @@ func (ae *ScenarioExecutor) executeTx(txIndex string, tx *scenmodel.Transaction)
 	ae.World.CreateStateBackup()
 
 	defer func() {
+		// `err` is a local in-flight signal: when set, the function rolls back
+		// post-snapshot state changes. The function still returns (output, nil)
+		// so that callers (ExecuteTxStep) can compare output against the
+		// scenario's ExpectedResult instead of treating a non-Ok return code
+		// as a fatal error.
 		if err != nil {
-			errRollback := ae.World.RollbackChanges()
-			if errRollback != nil {
+			if errRollback := ae.World.RollbackChanges(); errRollback != nil {
 				err = errRollback
 			}
 		} else {
-			errCommit := ae.World.CommitChanges()
-			if errCommit != nil {
+			if errCommit := ae.World.CommitChanges(); errCommit != nil {
 				err = errCommit
 			}
 		}
 	}()
 
-	// we also use fake vm outputs for transactions that don't use the VM, just for convenience
 	var output *vmcommon.VMOutput
 
+	// we also use fake vm outputs for transactions that don't use the VM, just for convenience
 	if !ae.senderHasEnoughBalance(tx) {
 		// out of funds is handled by the protocol, so it needs to be mocked here
 		output = outOfFundsResult()
@@ -96,13 +99,13 @@ func (ae *ScenarioExecutor) executeTx(txIndex string, tx *scenmodel.Transaction)
 				fmt.Println("\nIn txID:", txIndex, ", step type:Deploy", ", total gas used:", gasForExecution-output.GasRemaining)
 			}
 		case scenmodel.ScQuery:
-			// imitates the behaviour of the protocol
-			// the sender is the contract itself during SC queries
-			tx.From = tx.To
-			// gas restrictions waived during SC queries
-			tx.GasLimit.Value = math.MaxInt64
-			gasForExecution = math.MaxInt64
-			fallthrough
+			output, err = ae.scQuery(txIndex, tx)
+			if err != nil {
+				return nil, err
+			}
+			if ae.PeekTraceGas() {
+				fmt.Println("\nIn txID:", txIndex, ", step type:ScQuery, function:", tx.Function, ", total gas used:", math.MaxInt64-output.GasRemaining)
+			}
 		case scenmodel.ScCall:
 			output, err = ae.scCall(txIndex, tx, tx.GasLimit.Value)
 			if err != nil {
@@ -131,11 +134,14 @@ func (ae *ScenarioExecutor) executeTx(txIndex string, tx *scenmodel.Transaction)
 	}
 
 	if output.ReturnCode == vmcommon.Ok {
-		err := ae.updateStateAfterTx(tx, output)
+		err = ae.updateStateAfterTx(tx, output)
 		if err != nil {
 			return nil, err
 		}
 	} else {
+		// Signal the deferred rollback that state mutations from this VM call
+		// must be reverted. `err` is consumed by the defer and intentionally
+		// not propagated to the caller — see the defer comment above.
 		err = fmt.Errorf(
 			"tx step failed: retcode=%d, msg=%s",
 			output.ReturnCode, output.ReturnMessage)
@@ -149,6 +155,10 @@ func (ae *ScenarioExecutor) senderHasEnoughBalance(tx *scenmodel.Transaction) bo
 		return true
 	}
 	sender := ae.World.AcctMap.GetAccount(tx.From.Value)
+	if sender == nil {
+		return false
+	}
+
 	return sender.Balance.Cmp(tx.EGLDValue.Value) >= 0
 }
 
@@ -250,6 +260,16 @@ func (ae *ScenarioExecutor) scCreate(txIndex string, tx *scenmodel.Transaction, 
 }
 
 func (ae *ScenarioExecutor) scCall(txIndex string, tx *scenmodel.Transaction, gasLimit uint64) (*vmcommon.VMOutput, error) {
+	return ae.scCallWithCaller(txIndex, tx, tx.From.Value, gasLimit)
+}
+
+func (ae *ScenarioExecutor) scQuery(txIndex string, tx *scenmodel.Transaction) (*vmcommon.VMOutput, error) {
+	// Protocol semantics for SC queries:
+	// caller is the contract itself and gas restrictions are waived.
+	return ae.scCallWithCaller(txIndex, tx, tx.To.Value, math.MaxInt64)
+}
+
+func (ae *ScenarioExecutor) scCallWithCaller(txIndex string, tx *scenmodel.Transaction, callerAddr []byte, gasLimit uint64) (*vmcommon.VMOutput, error) {
 	recipient := ae.World.AcctMap.GetAccount(tx.To.Value)
 	if recipient == nil {
 		return nil, fmt.Errorf("tx recipient (address: %s) does not exist", hex.EncodeToString(tx.To.Value))
@@ -258,7 +278,7 @@ func (ae *ScenarioExecutor) scCall(txIndex string, tx *scenmodel.Transaction, ga
 		return nil, fmt.Errorf("tx recipient (address: %s) is not a smart contract", hex.EncodeToString(tx.To.Value))
 	}
 
-	input := ConvertScenarioTxToVMInput(tx)
+	input := convertScenarioTxToVMInputWithCallerAndGas(tx, callerAddr, gasLimit)
 	txHash := generateTxHash(txIndex)
 	input.CurrentTxHash = txHash
 	input.OriginalTxHash = txHash
@@ -365,14 +385,18 @@ func addESDTToVMInput(esdtData []*scenmodel.ESDTTxData, vmInput *vmcommon.VMInpu
 
 // ConvertScenarioTxToVMInput converts the scenario format to the VM input format.
 func ConvertScenarioTxToVMInput(tx *scenmodel.Transaction) *vmcommon.ContractCallInput {
+	return convertScenarioTxToVMInputWithCallerAndGas(tx, tx.From.Value, tx.GasLimit.Value)
+}
+
+func convertScenarioTxToVMInputWithCallerAndGas(tx *scenmodel.Transaction, callerAddr []byte, gasLimit uint64) *vmcommon.ContractCallInput {
 	input := &vmcommon.ContractCallInput{
 		VMInput: vmcommon.VMInput{
-			CallerAddr:  tx.From.Value,
+			CallerAddr:  callerAddr,
 			Arguments:   scenmodel.JSONBytesFromTreeValues(tx.Arguments),
 			CallValue:   tx.EGLDValue.Value,
 			CallType:    vm.DirectCall,
 			GasPrice:    tx.GasPrice.Value,
-			GasProvided: tx.GasLimit.Value,
+			GasProvided: gasLimit,
 			GasLocked:   0,
 		},
 		RecipientAddr:     tx.To.Value,

@@ -28,13 +28,13 @@ func (a *Account) Validate() error {
 	if len(a.Code) > 0 {
 		if !scAddress {
 			return fmt.Errorf(
-				"account has a smart contract address, but has no code: 0x%s",
+				"account has code but not a smart contract address: 0x%s",
 				hex.EncodeToString(a.Address))
 		}
 	} else {
 		if scAddress {
 			return fmt.Errorf(
-				"account has code but not a smart contract address: %s",
+				"account has a smart contract address, but has no code: 0x%s",
 				hex.EncodeToString(a.Address))
 		}
 	}

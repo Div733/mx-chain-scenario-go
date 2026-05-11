@@ -39,29 +39,44 @@ func decodeShardId(shardIdRaw string) (byte, error) {
 	return shardId[0], nil
 }
 
-func createAddressFromPrefix(prefix []byte, startIndex, endIndex int) *[32]byte {
+func createAddressFromPrefix(prefix []byte, startIndex, endIndex int) (*[32]byte, error) {
+	maxLen := endIndex - startIndex
+	if len(prefix) > maxLen {
+		return nil, fmt.Errorf(
+			"address prefix too long: got %d bytes, max %d",
+			len(prefix),
+			maxLen,
+		)
+	}
+
 	var result [32]byte
-	for i := 0; i < len(prefix) && i < endIndex-startIndex; i++ {
+	for i := 0; i < len(prefix); i++ {
 		result[i+startIndex] = prefix[i]
 	}
 	for i := len(prefix) + startIndex; i < endIndex; i++ {
 		result[i] = byte('_')
 	}
-	return &result
+	return &result, nil
 }
 
 func createAddressOptionalShardId(input string, numLeadingZeros int) ([]byte, error) {
 	tokens := strings.Split(input, "#")
 	switch len(tokens) {
 	case 1:
-		address := createAddressFromPrefix([]byte(tokens[0]), numLeadingZeros, 32)
+		address, err := createAddressFromPrefix([]byte(tokens[0]), numLeadingZeros, 32)
+		if err != nil {
+			return nil, err
+		}
 		return address[:], nil
 	case 2:
 		shardId, err := decodeShardId(tokens[1])
 		if err != nil {
 			return []byte{}, err
 		}
-		address := createAddressFromPrefix([]byte(tokens[0]), numLeadingZeros, 32)
+		address, err := createAddressFromPrefix([]byte(tokens[0]), numLeadingZeros, 31)
+		if err != nil {
+			return nil, err
+		}
 		address[31] = shardId
 		return address[:], nil
 	default:
@@ -77,13 +92,19 @@ func addressExpression(input string) ([]byte, error) {
 // Generates a 32-byte smart contract address based on the input.
 func (ei *ExprInterpreter) scExpression(input string) ([]byte, error) {
 	address, err := createAddressOptionalShardId(input, SCAddressReservedPrefixLength)
+	if err != nil {
+		return nil, err
+	}
 	copy(address[SCAddressReservedPrefixLength-core.VMTypeLen:], ei.GetVMType()[:])
 	return address, err
 }
 
 func bech32Decode(input string) ([]byte, error) {
 	addressLen := 32
-	bpc, _ := pc.NewBech32PubkeyConverter(addressLen, core.DefaultAddressPrefix)
+	bpc, err := pc.NewBech32PubkeyConverter(addressLen, core.DefaultAddressPrefix)
+	if err != nil {
+		return []byte{}, fmt.Errorf("failed to create bech32 converter: %w", err)
+	}
 	str, err := bpc.Decode(input)
 
 	if err != nil {

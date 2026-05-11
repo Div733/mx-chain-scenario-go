@@ -1,0 +1,30 @@
+{
+    "comment": "DRWA rollout threshold breach drill in MultiversX scenario format",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"version\":3}",
+                        "str:drwa:token:CARBON-123:rollout:evidence": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"limited\",\"checks\":[\"token policy present\",\"sync failure threshold configured:10\",\"api error threshold configured:20\",\"denial mismatch threshold configured:0\"],\"missing_holders\":[],\"warnings\":[],\"ready\":true,\"requires_canary_only\":false,\"activation_steps\":[\"confirm canary success evidence\",\"activate limited issuer cohort\",\"monitor proxy/api/sdk consistency\",\"record post-rollout verification\"]}",
+                        "str:drwa:token:CARBON-123:rollout:verification": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"limited\",\"passed_checks\":[],\"failed_checks\":[\"sync failure rate exceeded: observed=50 threshold=10\",\"api error rate exceeded: observed=21 threshold=20\",\"denial mismatch count exceeded: observed=2 threshold=0\"],\"accepted\":false}"
+                    }
+                }
+            }
+        },
+        {
+            "step": "checkState",
+            "id": "check-threshold-breach",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"version\":3}",
+                        "str:drwa:token:CARBON-123:rollout:evidence": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"limited\",\"checks\":[\"token policy present\",\"sync failure threshold configured:10\",\"api error threshold configured:20\",\"denial mismatch threshold configured:0\"],\"missing_holders\":[],\"warnings\":[],\"ready\":true,\"requires_canary_only\":false,\"activation_steps\":[\"confirm canary success evidence\",\"activate limited issuer cohort\",\"monitor proxy/api/sdk consistency\",\"record post-rollout verification\"]}",
+                        "str:drwa:token:CARBON-123:rollout:verification": "str:{\"token_id\":\"CARBON-123\",\"stage\":\"limited\",\"passed_checks\":[],\"failed_checks\":[\"sync failure rate exceeded: observed=50 threshold=10\",\"api error rate exceeded: observed=21 threshold=20\",\"denial mismatch count exceeded: observed=2 threshold=0\"],\"accepted\":false}"
+                    }
+                }
+            }
+        }
+    ]
+}

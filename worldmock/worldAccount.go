@@ -36,13 +36,11 @@ type Account struct {
 	MockWorld       *MockWorld
 }
 
-var storageDefaultValue = make([]byte, 0)
-
 // StorageValue yields the storage value for key, default 0
 func (a *Account) StorageValue(key string) []byte {
 	value, found := a.Storage[key]
 	if !found {
-		return storageDefaultValue
+		return make([]byte, 0)
 	}
 	return value
 }
@@ -265,6 +263,26 @@ func (a *Account) Clone() *Account {
 		IsSmartContract: a.IsSmartContract,
 		MockWorld:       a.MockWorld,
 	}
+}
+
+// RestoreFrom overwrites the mutable state of the account with a snapshot copy.
+func (a *Account) RestoreFrom(snapshot *Account) {
+	a.Exists = snapshot.Exists
+	a.Address = cloneBytes(snapshot.Address)
+	a.Nonce = snapshot.Nonce
+	a.Balance = big.NewInt(0).Set(snapshot.Balance)
+	a.BalanceDelta = big.NewInt(0).Set(snapshot.BalanceDelta)
+	a.Storage = snapshot.cloneStorage()
+	a.RootHash = cloneBytes(snapshot.RootHash)
+	a.Code = cloneBytes(snapshot.Code)
+	a.CodeHash = cloneBytes(snapshot.CodeHash)
+	a.CodeMetadata = cloneBytes(snapshot.CodeMetadata)
+	a.OwnerAddress = cloneBytes(snapshot.OwnerAddress)
+	a.AsyncCallData = snapshot.AsyncCallData
+	a.Username = cloneBytes(snapshot.Username)
+	a.DeveloperReward = big.NewInt(0).Set(snapshot.DeveloperReward)
+	a.ShardID = snapshot.ShardID
+	a.IsSmartContract = snapshot.IsSmartContract
 }
 
 func (a *Account) cloneStorage() map[string][]byte {

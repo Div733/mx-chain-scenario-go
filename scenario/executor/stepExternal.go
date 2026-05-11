@@ -16,10 +16,13 @@ func (ae *ScenarioExecutor) ExecuteExternalStep(step *scenmodel.ExternalStepsSte
 	clonedFileResolver := ae.fileResolver.Clone()
 	externalStepsRunner := scenio.NewScenarioController(ae, clonedFileResolver, ae.vmBuilder.GetVMType())
 
-	extAbsPth := ae.fileResolver.ResolveAbsolutePath(step.Path)
+	extAbsPth, err := ae.fileResolver.ResolveAbsolutePath(step.Path)
+	if err != nil {
+		return err
+	}
 	setExternalStepGasTracing(ae, step)
 
-	err := externalStepsRunner.RunSingleJSONScenario(extAbsPth, scenio.DefaultRunScenarioOptions())
+	err = externalStepsRunner.RunSingleJSONScenario(extAbsPth, scenio.DefaultRunScenarioOptions())
 	if err != nil {
 		return err
 	}
