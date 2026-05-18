@@ -2,7 +2,6 @@ package executortest
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
@@ -74,8 +73,8 @@ func (mtb *ScenariosTestBuilder) Run() *ScenariosTestBuilder {
 	)
 
 	if len(mtb.singleFile) > 0 {
-		fullPath := path.Join(getTestRoot(), mtb.folder)
-		fullPath = path.Join(fullPath, mtb.singleFile)
+		fullPath := filepath.Join(getTestRoot(), mtb.folder)
+		fullPath = filepath.Join(fullPath, mtb.singleFile)
 
 		mtb.currentError = runner.RunSingleJSONScenario(
 			fullPath,
@@ -103,5 +102,11 @@ func (mtb *ScenariosTestBuilder) CheckNoError() *ScenariosTestBuilder {
 // RequireError does an assert for the containing error
 func (mtb *ScenariosTestBuilder) RequireError(expectedErrorMsg string) *ScenariosTestBuilder {
 	require.EqualError(mtb.t, mtb.currentError, expectedErrorMsg)
+	return mtb
+}
+
+// RequireErrorContains does a substring assert for the containing error
+func (mtb *ScenariosTestBuilder) RequireErrorContains(expectedErrorMsg string) *ScenariosTestBuilder {
+	require.ErrorContains(mtb.t, mtb.currentError, expectedErrorMsg)
 	return mtb
 }

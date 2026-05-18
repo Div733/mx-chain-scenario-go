@@ -101,3 +101,19 @@ func (p *Parser) parseCheckValueJSONList(listRaw *oj.OJsonList) (scenmodel.JSONC
 		Values: values,
 	}, nil
 }
+
+func (p *Parser) parseJSONBytesList(obj interface{}) ([]scenmodel.JSONBytesFromString, error) {
+	listRaw, listOk := obj.(*oj.OJsonList)
+	if !listOk {
+		return nil, errors.New("not a JSON list")
+	}
+	var result []scenmodel.JSONBytesFromString
+	for _, elemRaw := range listRaw.AsList() {
+		ba, err := p.processStringAsByteArray(elemRaw)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, ba)
+	}
+	return result, nil
+}

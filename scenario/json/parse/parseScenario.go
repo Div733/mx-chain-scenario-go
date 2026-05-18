@@ -204,6 +204,11 @@ func (p *Parser) processScenarioStep(stepObj oj.OJsonObject) (scenmodel.Step, er
 				if err != nil {
 					return nil, fmt.Errorf("error parsing block hashes: %w", err)
 				}
+			case "authorizedDRWASyncCallers":
+				step.AuthorizedDRWASyncCallers, err = p.parseJSONBytesList(kvp.Value)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing authorized DRWA sync callers: %w", err)
+				}
 			default:
 				return nil, fmt.Errorf("invalid set state field: %s", kvp.Key)
 			}

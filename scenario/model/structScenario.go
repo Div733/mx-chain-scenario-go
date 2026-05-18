@@ -63,7 +63,8 @@ type SetStateStep struct {
 	PreviousBlockInfo *BlockInfo
 	CurrentBlockInfo  *BlockInfo
 	BlockHashes       JSONValueList
-	NewAddressMocks   []*NewAddressMock
+	NewAddressMocks           []*NewAddressMock
+	AuthorizedDRWASyncCallers []JSONBytesFromString
 }
 
 // CheckStateStep is a step where the state of the blockchain mock is verified.

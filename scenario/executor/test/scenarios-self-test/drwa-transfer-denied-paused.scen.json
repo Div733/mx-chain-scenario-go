@@ -1,0 +1,48 @@
+{
+    "comment": "DRWA transfer denial through the live builtin ESDT transfer path when the token policy is globally paused",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": {
+                    "storage": {
+                        "str:drwa:token:434152424f4e2d313233:policy": "0x7b2276657273696f6e223a312c22626f6479223a2265794a6b636e64685832567559574a735a5751694f6e527964575573496d647362324a68624639775958567a5a53493664484a315a58303d227d"
+                    }
+                },
+                "address:sender": {
+                    "nonce": "0",
+                    "balance": "0x1000000000",
+                    "esdt": {
+                        "str:CARBON-123": "10"
+                    },
+                    "storage": {
+                        "str:drwa:holder:434152424f4e2d313233:73656e6465725f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f": "0x7b2276657273696f6e223a312c22626f6479223a2265794a7265574e66633352686448567a496a6f6959584277636d39325a5751694c434a6862577866633352686448567a496a6f6959584277636d39325a57516966513d3d227d"
+                    }
+                },
+                "address:receiver": {
+                    "nonce": "0",
+                    "balance": "0x1000000000",
+                    "storage": {
+                        "str:drwa:holder:434152424f4e2d313233:72656365697665725f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f": "0x7b2276657273696f6e223a312c22626f6479223a2265794a7265574e66633352686448567a496a6f6959584277636d39325a5751694c434a6862577866633352686448567a496a6f6959584277636d39325a57516966513d3d227d"
+                    }
+                }
+            }
+        },
+        {
+            "step": "transfer",
+            "id": "paused-transfer",
+            "tx": {
+                "from": "address:sender",
+                "to": "address:receiver",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:CARBON-123",
+                        "value": "1"
+                    }
+                ],
+                "gasLimit": "0x100000000",
+                "gasPrice": "0x01"
+            }
+        }
+    ]
+}

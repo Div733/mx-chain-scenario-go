@@ -55,6 +55,7 @@ type MockWorld struct {
 	ProvidedBlockchainHook     vmcommon.BlockchainHook
 	EnableEpochsHandler        vmcommon.EnableEpochsHandler
 	OtherVMOutputMap           map[string]*vmcommon.VMOutput
+	AuthorizedDRWASyncCallers map[string]struct{}
 }
 
 // NewMockWorld creates a new MockWorld instance
@@ -70,8 +71,9 @@ func NewMockWorld() *MockWorld {
 		NewAddressMocks:     nil,
 		CompiledCode:        make(map[string][]byte),
 		BuiltinFuncs:        nil,
-		EnableEpochsHandler: EnableEpochsHandlerStubAllFlags(),
-		OtherVMOutputMap:    make(map[string]*vmcommon.VMOutput),
+		EnableEpochsHandler:      EnableEpochsHandlerStubAllFlags(),
+		OtherVMOutputMap:         make(map[string]*vmcommon.VMOutput),
+		AuthorizedDRWASyncCallers: make(map[string]struct{}),
 	}
 	world.AccountsAdapter = NewMockAccountsAdapter(world)
 	world.GuardedAccountHandler = NewMockGuardedAccountHandler()
@@ -105,6 +107,7 @@ func (b *MockWorld) Clear() {
 	b.Blockhashes = nil
 	b.NewAddressMocks = nil
 	b.CompiledCode = make(map[string][]byte)
+	b.AuthorizedDRWASyncCallers = make(map[string]struct{})
 }
 
 // SetCurrentBlockHash -
@@ -129,7 +132,12 @@ func (b *MockWorld) NumberOfShards() uint32 {
 
 // ComputeId -
 func (b *MockWorld) ComputeId(address []byte) uint32 {
-	return b.AcctMap.GetAccount(address).ShardID
+	account := b.AcctMap.GetAccount(address)
+	if account == nil {
+		return 0
+	}
+
+	return account.ShardID
 }
 
 // SelfId -
@@ -141,7 +149,17 @@ func (b *MockWorld) SelfId() uint32 {
 func (b *MockWorld) SameShard(firstAddress []byte, secondAddress []byte) bool {
 	firstAccount := b.AcctMap.GetAccount(firstAddress)
 	secondAccount := b.AcctMap.GetAccount(secondAddress)
-	return firstAccount.ShardID == secondAccount.ShardID
+	firstShardID := uint32(0)
+	if firstAccount != nil {
+		firstShardID = firstAccount.ShardID
+	}
+
+	secondShardID := uint32(0)
+	if secondAccount != nil {
+		secondShardID = secondAccount.ShardID
+	}
+
+	return firstShardID == secondShardID
 }
 
 // CommunicationIdentifier -

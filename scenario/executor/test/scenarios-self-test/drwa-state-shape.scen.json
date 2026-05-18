@@ -1,0 +1,66 @@
+{
+    "comment": "DRWA state shape proof in MultiversX scenario format",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"strict_auditor_mode\":true,\"metadata_protection_enabled\":true}"
+                    }
+                },
+                "address:sender": {
+                    "nonce": "1",
+                    "balance": "0x1000000000",
+                    "esdt": {
+                        "str:CARBON-123": "10"
+                    },
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:sender": "str:{\"kyc_status\":\"approved\",\"aml_status\":\"approved\",\"investor_class\":\"accredited\",\"jurisdiction_code\":\"SG\",\"expiry_round\":250}"
+                    }
+                },
+                "address:receiver": {
+                    "nonce": "0",
+                    "balance": "0x1000000000",
+                    "esdt": {
+                        "str:CARBON-123": "1"
+                    },
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:receiver": "str:{\"kyc_status\":\"approved\",\"aml_status\":\"approved\",\"investor_class\":\"accredited\",\"jurisdiction_code\":\"SG\",\"expiry_round\":250}"
+                    }
+                }
+            }
+        },
+        {
+            "step": "checkState",
+            "id": "check-drwa-shape",
+            "accounts": {
+                "address:system": {
+                    "storage": {
+                        "str:drwa:token:CARBON-123:policy": "str:{\"drwa_enabled\":true,\"global_pause\":false,\"strict_auditor_mode\":true,\"metadata_protection_enabled\":true}"
+                    }
+                },
+                "address:sender": {
+                    "nonce": "1",
+                    "balance": "0x1000000000",
+                    "esdt": {
+                        "str:CARBON-123": "10"
+                    },
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:sender": "str:{\"kyc_status\":\"approved\",\"aml_status\":\"approved\",\"investor_class\":\"accredited\",\"jurisdiction_code\":\"SG\",\"expiry_round\":250}"
+                    }
+                },
+                "address:receiver": {
+                    "nonce": "0",
+                    "balance": "0x1000000000",
+                    "esdt": {
+                        "str:CARBON-123": "1"
+                    },
+                    "storage": {
+                        "str:drwa:holder:CARBON-123:receiver": "str:{\"kyc_status\":\"approved\",\"aml_status\":\"approved\",\"investor_class\":\"accredited\",\"jurisdiction_code\":\"SG\",\"expiry_round\":250}"
+                    }
+                }
+            }
+        }
+    ]
+}

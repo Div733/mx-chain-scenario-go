@@ -13,6 +13,10 @@ import (
 	ei "github.com/multiversx/mx-chain-scenario-go/scenario/expression/interpreter"
 )
 
+var newBech32PubkeyConverter = func(addressLen int, prefix string) (core.PubkeyConverter, error) {
+	return pc.NewBech32PubkeyConverter(addressLen, prefix)
+}
+
 // ExprReconstructorHint type definition
 type ExprReconstructorHint uint64
 
@@ -174,11 +178,14 @@ func bech32Pretty(pkBytes []byte) string {
 		return ""
 	}
 	addressLen := 32
-	bpc, _ := pc.NewBech32PubkeyConverter(addressLen, core.DefaultAddressPrefix)
+	bpc, err := newBech32PubkeyConverter(addressLen, core.DefaultAddressPrefix)
+	if err != nil {
+		return unknownByteArrayPretty(pkBytes)
+	}
 	encoded, err := bpc.Encode(pkBytes)
 
 	if err != nil {
-		return ""
+		return unknownByteArrayPretty(pkBytes)
 	}
 
 	if len(encoded) > 20 {

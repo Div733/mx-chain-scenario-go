@@ -9,6 +9,15 @@ func TestScenariosSelfTest(t *testing.T) {
 	ScenariosTest(t).
 		Folder("scenarios-self-test").
 		Exclude("scenarios-self-test/builtin-func-esdt-transfer.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-kyc.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-lock-round.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-paused.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-travel-rule.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-sanctions.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-strict-auditor.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-jurisdiction.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-investor-class.scen.json").
+		Exclude("scenarios-self-test/drwa-transfer-denied-wind-down.scen.json").
 		Exclude("scenarios-self-test/esdt-zero-balance-check-err.scen.json").
 		Exclude("scenarios-self-test/esdt-non-zero-balance-check-err.scen.json").
 		Run().
@@ -39,7 +48,7 @@ func TestSetAccountSCAddressErr1(t *testing.T) {
 		File("set-account-sc-addr.err1.json").
 		Run().
 		RequireError(
-			"\"setState\" step validation failed for account \"address:not-a-sc-address\": account has a smart contract address, but has no code: 0x6e6f742d612d73632d616464726573735f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f")
+			"\"setState\" step validation failed for account \"address:not-a-sc-address\": account has code but not a smart contract address: 0x6e6f742d612d73632d616464726573735f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f")
 }
 
 func TestSetAccountSCAddressErr2(t *testing.T) {
@@ -48,7 +57,7 @@ func TestSetAccountSCAddressErr2(t *testing.T) {
 		File("set-account-sc-addr.err2.json").
 		Run().
 		RequireError(
-			"\"setState\" step validation failed for account \"sc:should-be-sc\": account has code but not a smart contract address: 0000000000000000000073686f756c642d62652d73635f5f5f5f5f5f5f5f5f5f")
+			"\"setState\" step validation failed for account \"sc:should-be-sc\": account has a smart contract address, but has no code: 0x0000000000000000000073686f756c642d62652d73635f5f5f5f5f5f5f5f5f5f")
 }
 
 func TestSetAccountSCAddressErr3(t *testing.T) {
@@ -212,6 +221,134 @@ func TestScenariosTransferEsdtToNonexistingAccount(t *testing.T) {
 	ScenariosTest(t).
 		Folder("scenarios-self-test").
 		File("transfer-esdt-to-nonexisting-account.scen.json").
+		Run().
+		CheckNoError()
+}
+
+func TestScenariosDRWAStateShape(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-state-shape.scen.json").
+		Run().
+		CheckNoError()
+}
+
+func TestScenariosDRWARecoveryDrill(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-recovery-drill.scen.json").
+		Run().
+		CheckNoError()
+}
+
+func TestScenariosDRWARolloutCanaryPromotion(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-rollout-canary-promotion.scen.json").
+		Run().
+		CheckNoError()
+}
+
+func TestScenariosDRWARolloutThresholdBreach(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-rollout-threshold-breach.scen.json").
+		Run().
+		CheckNoError()
+}
+
+func TestScenariosDRWATransferDeniedKYC(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-kyc.scen.json").
+		Run().
+		RequireErrorContains("DRWA_KYC_REQUIRED")
+}
+
+func TestScenariosDRWATransferDeniedPaused(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-paused.scen.json").
+		Run().
+		RequireErrorContains("DRWA_TOKEN_PAUSED")
+}
+
+func TestScenariosDRWATransferDeniedLockRound(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-lock-round.scen.json").
+		Run().
+		RequireErrorContains("DRWA_TRANSFER_LOCKED")
+}
+
+func TestScenariosDRWATransferDeniedTravelRule(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-travel-rule.scen.json").
+		Run().
+		RequireErrorContains("DRWA_TRAVEL_RULE_REQUIRED")
+}
+
+func TestScenariosDRWATransferDeniedSanctions(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-sanctions.scen.json").
+		Run().
+		RequireErrorContains("DRWA_SANCTIONS_MATCH")
+}
+
+func TestScenariosDRWATransferDeniedStrictAuditor(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-strict-auditor.scen.json").
+		Run().
+		RequireErrorContains("DRWA_AUDITOR_REQUIRED")
+}
+
+func TestScenariosDRWATransferDeniedJurisdiction(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-jurisdiction.scen.json").
+		Run().
+		RequireErrorContains("DRWA_JURISDICTION_BLOCKED")
+}
+
+func TestScenariosDRWATransferDeniedInvestorClass(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-investor-class.scen.json").
+		Run().
+		RequireErrorContains("DRWA_INVESTOR_CLASS_BLOCKED")
+}
+
+func TestScenariosDRWATransferDeniedWindDown(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-denied-wind-down.scen.json").
+		Run().
+		RequireErrorContains("DRWA_WIND_DOWN_ACTIVE")
+}
+
+func TestScenariosDRWATransferAllowed(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("drwa-transfer-allowed.scen.json").
+		Run().
+		CheckNoError()
+}
+
+func TestScenariosMRVRegistryStateShape(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("mrv-registry-state-shape.scen.json").
+		Run().
+		CheckNoError()
+}
+
+func TestScenariosMRVIncomeDistributionStateShape(t *testing.T) {
+	ScenariosTest(t).
+		Folder("scenarios-self-test").
+		File("mrv-income-distribution-state-shape.scen.json").
 		Run().
 		CheckNoError()
 }
