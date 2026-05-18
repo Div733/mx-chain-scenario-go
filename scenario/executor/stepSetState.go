@@ -48,15 +48,16 @@ func (ae *ScenarioExecutor) ExecuteSetStateStep(step *scenmodel.SetStateStep) er
 	addressMocksToAdd := convertNewAddressMocks(step.NewAddressMocks)
 	ae.World.NewAddressMocks = append(ae.World.NewAddressMocks, addressMocksToAdd...)
 
-	// replace AuthorizedDRWASyncCallers entirely so setState defines complete world state
-	ae.World.AuthorizedDRWASyncCallers = make(map[string]struct{})
-	for _, caller := range step.AuthorizedDRWASyncCallers {
-		ae.World.AuthorizedDRWASyncCallers[string(caller.Value)] = struct{}{}
+		// replace AuthorizedDRWASyncCallers only if the step specifies them
+	if step.AuthorizedDRWASyncCallers != nil {
+		ae.World.AuthorizedDRWASyncCallers = make(map[string]struct{})
+		for _, caller := range step.AuthorizedDRWASyncCallers {
+			ae.World.AuthorizedDRWASyncCallers[string(caller.Value)] = struct{}{}
+		}
 	}
 
 	return nil
 }
-
 // PutNewAccount Puts a new account in world account map. Overwrites.
 func (ae *ScenarioExecutor) PutNewAccount(scenAccount *scenmodel.Account) error {
 	worldAccount, err := convertAccount(scenAccount, ae.World)
